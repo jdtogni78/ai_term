@@ -1,6 +1,6 @@
 # Ai Terminal
 
-This is as prqject to create an AI supported terminal.
+This is as project to create an AI supported terminal.
 
 It uses langgraph agents to interface with the AI models.
 
@@ -13,5 +13,10 @@ The terminal user can request for ai suggestions with a command "aihelp <questio
 The system runs the terminal commands, capturing the stdout and stderr, and command.
 When an error occurs the AI is called to review the output and make a suggestion for the next command.
 You can also request for AI help with a command "askai <question/request>".
+
+## Improvements
+
+* Use groq for faster responses
+* Use streaming so UI doesnt freeze
 
  
