@@ -19,17 +19,38 @@ def splash(output_field):
 def run_command(app, output_field, aicmd, command):
     if command.startswith("aicmd"):
         if len(command.split(" ")) > 1:
-            pos = int(command.split(" ")[1]) + 1
-            command = aicmd.split("\n")[pos]
+            pos = int(command.split(" ")[1]) - 1
+            cmds = aicmd.split("\n")
+            command = cmds[pos]
         else:
             command = aicmd
         output_field.text += f"> {command}\n"
-    start_time = time.time()
-    main_out = agent.run({"command": command})
-    end_time = time.time()
-    execution_time = end_time - start_time
-    output_field.text += f"\nExecution time: {execution_time:.2f} seconds\n"
-    return main_out
+    # run agent on background thread
+
+    global stop_threads
+    stop_threads = False
+    def show_progress():
+        # print a . every second
+        global stop_threads
+        while True:
+            output_field.text += "."
+            time.sleep(1)
+            if stop_threads:
+                break
+        output_field.text += "done!\n"
+
+    def run_agent(input):
+        agent.run(input)
+        global stop_threads
+        stop_threads = True
+        progress.join()
+
+    progress = threading.Thread(target=show_progress)
+    progress.start()
+    input = {"command": command}
+    threading.Thread(target=run_agent, args=(input,)).start()
+    
+    return
 
 def setup_terminal():
     output_field = TextArea(read_only=True, style="fg:ansigreen")
@@ -81,18 +102,16 @@ def setup_terminal():
         side_review.text = ''
         side_suggestion.text = ''
         
-        out = run_command(app, output_field, last_aicmd, command)
-        update_text(out)
+        run_command(app, output_field, last_aicmd, command)
 
-    def update_text(out):
-        if 'stdout' in out and out['stdout'] != '':
-            output_field.text += out['stdout']
-        if 'stderr' in out and out['stderr'] != '':
-            output_field.text += "ERROR:\n" + out['stderr']
-        if 'output_review' in out and out['output_review'] != '':
-            side_review.text = out['output_review']
-        if 'predicted_command' in out and out['predicted_command'] != '':
-            side_suggestion.text = out['predicted_command']
+    def stream_to_text(field, part):
+        field.text += part
+
+    def setup_stream_callbacks():
+        agent.set_ai_stream_callback(lambda part: stream_to_text(side_review, part))
+        agent.set_strout_stream_callback(lambda part: stream_to_text(output_field, part))
+        agent.set_stderr_stream_callback(lambda part: stream_to_text(output_field, part))
+        agent.set_command_stream_callback(lambda part: stream_to_text(side_suggestion, part))
 
     @kb.add(Keys.Any)
     def _(event):
@@ -110,7 +129,7 @@ def setup_terminal():
     # Create and return the application
     app = Application(layout=layout, key_bindings=kb, full_screen=True)
     app.layout.focus(input_field)
-    
+    setup_stream_callbacks()
     return app, input_buffer, output_field, side_review, side_suggestion
 
 if __name__ == "__main__":
