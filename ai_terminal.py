@@ -19,8 +19,9 @@ def splash(output_field):
 def run_command(app, output_field, aicmd, command):
     if command.startswith("aicmd"):
         if len(command.split(" ")) > 1:
-            pos = int(command.split(" ")[1]) + 1
-            command = aicmd.split("\n")[pos]
+            pos = int(command.split(" ")[1]) - 1
+            cmds = aicmd.split("\n")
+            command = cmds[pos]
         else:
             command = aicmd
         output_field.text += f"> {command}\n"

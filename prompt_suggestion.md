@@ -6,6 +6,7 @@ You will receive a request, and provide 2 outputs.
 
 The command should be a valid bash command, and the reasoning should be a short explanation
 for the command.
+Feel free to make multiple suggestions of commands.
 
 ### RESPONSE FORMAT
 

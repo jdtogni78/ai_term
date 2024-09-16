@@ -8,6 +8,7 @@ You are given the following:
 First, review the command and output to undestand what was the goal af the command,
 the best way to accomplish that goal with other terminal commands, and if the command was
 correct. Also review the output and determine if it is correct and accomplishes the goal.
+If there are alternative interpretations or commands, feel free to make multiple suggestions.
 
 Respond objectively, with short commentary.
 

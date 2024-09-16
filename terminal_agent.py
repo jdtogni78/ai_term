@@ -4,6 +4,8 @@ import sys
 from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent, create_openai_tools_agent
 from langchain.prompts import PromptTemplate, StringPromptTemplate
 from langchain_community.chat_models import ChatOllama
+from langchain_groq import ChatGroq
+
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -15,6 +17,10 @@ from typing import Annotated, List, Sequence, TypedDict, Union
 import subprocess
 import re
 import xml.etree.ElementTree as ET
+from dotenv import load_dotenv
+import getpass
+
+load_dotenv()
 
 verbose = False
 
@@ -36,11 +42,24 @@ def extract_all_xml_from_string(s, key):
     else:
         return ""
 
+def create_llm():
+    if os.getenv("GROQ_API_KEY") is None:
+        return ChatOllama(
+            model="llama3.1",
+            temperature=0.0,
+        )
+    else:
+        return ChatGroq(    
+            model="llama-3.1-70b-versatile",
+            api_key=os.getenv("GROQ_API_KEY"),
+            temperature=0.0,
+        )
+
 # Define your agents
 class OutputAnalysisAgent:
     def __init__(self):
         self.prompt = PromptTemplate.from_file("prompt_output_review.md")
-        self.llm = ChatOllama(model="llama3.1")
+        self.llm = create_llm()
         self.chain = self.prompt | self.llm | StrOutputParser()
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
@@ -85,7 +104,7 @@ class SuggestionAgent:
     def __init__(self, ai_cmd):
         self.ai_cmd = ai_cmd
         self.prompt = PromptTemplate.from_file("prompt_suggestion.md")
-        self.llm = ChatOllama(model="llama3.1")
+        self.llm = create_llm()
         self.chain = self.prompt | self.llm | StrOutputParser()
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW

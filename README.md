@@ -14,9 +14,10 @@ The system runs the terminal commands, capturing the stdout and stderr, and comm
 When an error occurs the AI is called to review the output and make a suggestion for the next command.
 You can also request for AI help with a command "askai <question/request>".
 
-## Improvements
+## LLM Setup
 
-* Use groq for faster responses
-* Use streaming so UI doesnt freeze
+The terminal assumes **Ollama** is running locally, and the model **lama3.1** is available.
+
+To use groq for faster responses set the **GROQ_API_KEY** environment variable or in the **.env** file.
 
  
