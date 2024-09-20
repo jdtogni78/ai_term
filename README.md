@@ -20,4 +20,7 @@ The terminal assumes **Ollama** is running locally, and the model **lama3.1** is
 
 To use groq for faster responses set the **GROQ_API_KEY** environment variable or in the **.env** file.
 
+## Sample of current state
  
+https://github.com/user-attachments/assets/49e73206-f1d6-4917-ad46-8c3609ac825f
+
