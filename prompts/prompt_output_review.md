@@ -13,10 +13,7 @@ If there are alternative interpretations or commands, feel free to make multiple
 Respond objectively, with short commentary.
 
 If possible provide a prediction of the next command to be executed, either by addressing errors, or determining the next step.
-Do not write any commentary in the next command field, nor anything after the next command field.
 You can suggest multiple commands.
 
-<terminal_history>
+Terminal history:
 {terminal_history}
-</terminal_history>
-

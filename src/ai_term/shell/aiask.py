@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from terminal_agent import SuggestionAgent
+from ai_term.ai.agents.suggestions import SuggestionAgent
 import colorama
 
 def main(args):
@@ -14,7 +14,8 @@ def main(args):
 
     # If no arguments were provided, prompt the user for input
     if not user_input:
-        user_input = input("askai: ")
+        user_input = input("aiask: ")
+
 
     print(colorama.Fore.MAGENTA, end="", flush=True)
     # Make a suggestion based on the input

@@ -40,16 +40,10 @@ pip install -e .
 
 * Review the current state of the art in AI terminals and compare to this project.
     * https://www.warp.dev/
-    * https://www.cursor.sh/
-* Use instructor for structured outputs https://python.useinstructor.com/
-* Create a teminal centric UX, by making it seemlessly integrated with the terminal, some ideas:
-    * Automatically process stderr and stdout through ai
-        * Evaluate "exec 2> some_pipe" to redirect stderr to a pipe, see https://unix.stackexchange.com/questions/81861/redirect-all-stderr-of-a-console-and-subsequent-commands-to-a-file
-        * Limit the amount of data sent to the AI, for example send 20 head/tail lines for each stream
-    * Get the last commands from bash history
-    * Create commands for the "askai" feature
+    * https://github.com/nvbn/thefuck
 * Integrate with other LLMs
 * Send more history of commands to the AI
+* Support multiple shells, powers shell, etc...
 * Add tools to the AI agent
     * Web Search
     * File Search & Indexing

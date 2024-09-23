@@ -2,7 +2,7 @@
 
 import sys
 import colorama
-from terminal_agent import ScriptAgent
+from ai_term.ai.agents.scripts import ScriptAgent
 
 def main(args):
     # Initialize the SuggestionAgent
