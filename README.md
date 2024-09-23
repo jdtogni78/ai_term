@@ -24,10 +24,6 @@ To use groq for faster responses set the **GROQ_API_KEY** environment variable o
 
 Create a new key at https://console.groq.com/keys.
 
-## Sample of current state
- 
-https://github.com/user-attachments/assets/49e73206-f1d6-4917-ad46-8c3609ac825f
-
 ## Run the terminal
 
 ```
