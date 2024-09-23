@@ -5,7 +5,6 @@ from langchain.agents import Tool, AgentExecutor, LLMSingleActionAgent, create_o
 from langchain.prompts import PromptTemplate, StringPromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_groq import ChatGroq
-
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -20,9 +19,29 @@ import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
 import getpass
 
+from pydantic import BaseModel
+import instructor
+from groq import Groq
+from openai import OpenAI
+from typing import List
+
 load_dotenv()
 
 verbose = False
+
+from symbols import SYMBOL_CHOICE
+
+def persist_predictions(state):
+    for key, value in state.items():
+        if verbose: print(" **", key, value)
+    if "predicted_commands" in state:
+        with open("/tmp/predicted_commands.txt", "w") as f:
+            print("")
+            for i, cmd in enumerate(state["predicted_commands"]):
+                f.write(cmd + "\n")
+                print(SYMBOL_CHOICE + " " + str(i+1), cmd)
+        print("NOTE: run 'aicmd <number>' to execute the command\n")
+    return state
 
 class AgentState(TypedDict):
     command: str
@@ -33,38 +52,84 @@ class AgentState(TypedDict):
     agent_out: Union[AgentAction, AgentFinish, None]
     scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
 
-def extract_all_xml_from_string(s, key): 
-    # Find all occurrences of <key>value</key> in the string (the string is NOT a proper xml)
-    # find all <key> 
-    found_keys = re.findall(r'<' + key+'>([^<]+)</' + key + '>', s)
-    if len(found_keys) > 0:
-        return "\n".join(found_keys)
-    else:
-        return ""
+class LLMWrapper:
+    def __init__(self, prompt_file):
+        self.llm_model = self.get_model()
+        self.temperature = 0.0
+        self.prompt_file = prompt_file
+        self.prompt = PromptTemplate.from_file(prompt_file)
+        self.chain = self.prompt | self.create_llm() | StrOutputParser()
+        self.client = self.create_instructor()
 
-def create_llm():
-    if os.getenv("GROQ_API_KEY") is None:
-        return ChatOllama(
-            model="llama3.1",
-            temperature=0.0,
+    def create_llm(self):
+        if os.getenv("GROQ_API_KEY") is None:
+            return ChatOllama(
+                model=self.get_model(),
+                temperature=self.temperature,
+            )
+        else:
+            return ChatGroq(    
+                model=self.get_model(),
+                api_key=os.getenv("GROQ_API_KEY"),
+                temperature=self.temperature,
+            )
+
+    def get_model(self):
+        if os.getenv("GROQ_API_KEY") is None:
+            return "llama3.1"
+        else:
+            return "llama-3.1-70b-versatile"
+
+    # Using instuctor output are parsed and formatted using pydantic
+    # But, we lose the streaming feature
+    def create_instructor(self):
+        if os.getenv("GROQ_API_KEY") is None:
+            client = instructor.from_openai(OpenAI(
+                base_url="http://localhost:11434/v1",
+                api_key="ollama",  # required, but unused
+            ))
+        else:
+            client = Groq(
+                api_key=os.environ.get("GROQ_API_KEY"),
+            )
+
+            client = instructor.from_groq(client, mode=instructor.Mode.TOOLS)
+        return client
+
+    def stream(self, input):
+        return self.chain.stream(input)
+
+    def run_structured(self, response_model, prompt_kwargs):
+        prompt = self.prompt.format(**prompt_kwargs)
+        scripts = self.client.chat.completions.create(
+            model=self.llm_model,
+            response_model=response_model,
+            messages=[{"role": "user", "content": prompt}],
         )
-    else:
-        return ChatGroq(    
-            model="llama-3.1-70b-versatile",
-            api_key=os.getenv("GROQ_API_KEY"),
-            temperature=0.0,
-        )
+        
+        return scripts
 
 # Define your agents
-class OutputAnalysisAgent:
+class OutputAnalysis(BaseModel):
+    reasoning: str
+    predicted_commands: List[str]
+
+class OutputAnalysisAgent():
+    class AgentState(TypedDict):
+        terminal_history: list[dict[str, str]]
+        output_analysis: OutputAnalysis
+        predicted_commands: List[str]
+        agent_out: Union[AgentAction, AgentFinish, None]
+        scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
+
     def __init__(self):
-        self.prompt = PromptTemplate.from_file("prompt_output_review.md")
-        self.llm = create_llm()
-        self.chain = self.prompt | self.llm | StrOutputParser()
+        self.llm = LLMWrapper("prompt_output_review.md")
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
         self.command_stream_callback = None
+        self.graph = None
+        self.runnable = None
 
     def set_stream_callback(self, callback):
         self.stream_callback = callback
@@ -74,42 +139,67 @@ class OutputAnalysisAgent:
 
     def analyze(self, state):
         if (verbose): print(self.color + "> analyzing stdout and stderr")
-        stdout = state["stdout"]
-        stderr = state["stderr"]
-        command = state["command"]
-        review = ""
-        for step in self.chain.stream({
-            "stdout": stdout, 
-            "stderr": stderr,
-            "command": command,
-        }):
-            review += step
-            if self.stream_callback:
-                self.stream_callback(step)
-        # sample prediction: **Command:** `cut -d, --complement -f1; cut -d, -f2-4 file.csv`
-        # check if the review contains "**Command:** "
-        predicted_cmd = extract_all_xml_from_string(review, "next_command")
-        if self.command_stream_callback:
-            self.command_stream_callback(predicted_cmd)
+        history = state["terminal_history"]
+        analisys = self.llm.run_structured(OutputAnalysis, {"terminal_history": history})
+        
+        for cmd in analisys.predicted_commands:
+            if self.command_stream_callback:
+                self.command_stream_callback(cmd)
 
-        if (verbose): print(self.ai_color + "review: ", review)
-        if (verbose): print(self.ai_color + "predicted_cmd: ", predicted_cmd)
+        if (verbose): print(self.ai_color + "review: ", analisys)
         return {
-            "output_review": review,
-            "predicted_command": predicted_cmd,
-            "scratchpad": [{"review": review, "predicted_command": predicted_cmd}]
+            "output_analysis": analisys.reasoning,
+            "predicted_commands": analisys.predicted_commands,
+            "scratchpad": [{"output_analysis": analisys}]
         }
+    
+    def print_output_analysis(self, state):
+        print("\nOutput analysis: ", state["output_analysis"])
+        return state
+
+    def create_runnable(self):
+        graph = StateGraph(self.AgentState)
+        
+        graph.add_node("output_reviewer", self.analyze)
+        graph.add_node("print_output_analysis", self.print_output_analysis)
+        graph.add_node("persist_predictions", persist_predictions)
+        
+        graph.add_edge(START, "output_reviewer")
+        graph.add_edge("output_reviewer", "print_output_analysis")
+        graph.add_edge("print_output_analysis", "persist_predictions")
+        graph.add_edge("persist_predictions", END)
+        
+        self.graph = graph
+        self.runnable = graph.compile()
+
+    def run(self, history):
+        if self.runnable is None:
+            self.create_runnable()
+        return self.runnable.invoke({"terminal_history" : history})
+
+    def get_state(self):
+        return self.runnable.get_state()
+
+class Suggestion(BaseModel):
+    reasoning: str
+    predicted_commands: List[str]
 
 class SuggestionAgent:
-    def __init__(self, ai_cmd):
-        self.ai_cmd = ai_cmd
-        self.prompt = PromptTemplate.from_file("prompt_suggestion.md")
-        self.llm = create_llm()
-        self.chain = self.prompt | self.llm | StrOutputParser()
+    class AgentState(TypedDict):
+        request: str
+        suggestion: Suggestion
+        agent_out: Union[AgentAction, AgentFinish, None]
+        predicted_commands: List[str]
+        scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
+
+    def __init__(self):
+        self.llm = LLMWrapper("prompt_suggestion.md")
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
         self.command_stream_callback = None
+        self.graph = None
+        self.runnable = None
 
     def set_stream_callback(self, callback):
         self.stream_callback = callback
@@ -119,186 +209,118 @@ class SuggestionAgent:
 
     def make_suggestion(self, state):
         # remove the ai_cmd from the command
-        command = state["command"]
-        if command.startswith(self.ai_cmd + " "):
-            command = command[len(self.ai_cmd):]
-        if (verbose): print(self.color + "> requesting ai help: ", command)
+        request = state["request"]
+        if (verbose): print(self.color + "> requesting ai help: ", request)
         # Generate suggestions based on context
-        suggestion = ""
+        suggestion = self.llm.run_structured(Suggestion, {"request": request})
+
+        for cmd in suggestion.predicted_commands:
+            if self.command_stream_callback:
+                self.command_stream_callback(cmd)
+
+        return {
+            "suggestion": suggestion.reasoning,
+            "predicted_commands": suggestion.predicted_commands,
+            "scratchpad": [{"make_suggestion": suggestion}]
+        }
+    
+    def print_suggestion(self, state):
+        print("\nSuggestion: ", state["suggestion"])
+        return state
+
+    def create_runnable(self):
+        graph = StateGraph(self.AgentState)
+        graph.add_node("suggestion_agent", self.make_suggestion)
+        graph.add_node("print_suggestion", self.print_suggestion)
+        graph.add_node("persist_predictions", persist_predictions)
         
-        # stream, if needed, the output of the chain
-        for step in self.chain.stream({"request": command, "scratchpad": state["scratchpad"]}):
-            suggestion += step
-            if self.stream_callback:
-                self.stream_callback(step)
-        # check if the suggestion contains "**Next Command:** "
-        predicted_cmd = extract_all_xml_from_string(suggestion, "command")
-        if self.command_stream_callback:
-            self.command_stream_callback(predicted_cmd)
+        graph.add_edge(START, "suggestion_agent")
+        graph.add_edge("suggestion_agent", "print_suggestion")
+        graph.add_edge("print_suggestion", "persist_predictions")
+        graph.add_edge("persist_predictions", END)
+        
+        self.graph = graph
+        self.runnable = graph.compile()
 
-        if (verbose): print(self.ai_color + "suggestion: ", suggestion)
-        if (verbose): print(self.ai_color + "predicted_cmd: ", predicted_cmd)
-        return {
-            "predicted_command": predicted_cmd,
-            "output_review": suggestion,
-            "scratchpad": [{"make_suggestion": suggestion, "predicted_command": predicted_cmd}]
-        }
+    def run(self, request): #output is Suggestion
+        if self.runnable is None:
+            self.create_runnable()
+        return self.runnable.invoke({"request" : request})
 
-class InputCommandRouter:
-    def __init__(self, ai_cmd):
-        self.ai_cmd = ai_cmd
-        self.color = colorama.Fore.BLUE
-        self.stdout_color = colorama.Fore.WHITE
-        self.stderr_color = colorama.Fore.RED
-        self.stream_callback_stdout = None
-        self.stream_callback_stderr = None
+    def get_state(self):
+        return self.runnable.get_state()
 
-    def set_stream_callback_stdout(self, callback):
-        self.stream_callback_stdout = callback
 
-    def set_stream_callback_stderr(self, callback):
-        self.stream_callback_stderr = callback
+class Script(BaseModel):
+    filename: str
+    content: str
 
-    def run_command(self, command):
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        stdout = ""
-        stderr = ""
-        if (verbose): 
-            print(self.color + "# run command: ", command)
-        while True:
-            output = process.stdout.readline()
-            error = process.stderr.readline()
-            if (verbose):
-                if output:
-                    print(self.stdout_color + output, file=sys.stdout)
-                if error:
-                    # print to stderr
-                    print(self.stderr_color + error, file=sys.stderr)
+class Scripts(BaseModel):
+    scripts: List[Script]
 
-            if output:
-                stdout += output
-                if self.stream_callback_stdout:
-                    self.stream_callback_stdout(output)
-            if error:
-                stderr += error
-                if self.stream_callback_stderr:
-                    self.stream_callback_stderr(error)
+class ScriptAgent:
+    class AgentState(TypedDict):
+        request: str
+        # list of tuples (filename, content)
+        scripts: Scripts
+        output_review: str
+        agent_out: Union[AgentAction, AgentFinish, None]
+        scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
 
-            if process.poll() is not None and not output and not error:
-                break
-        return stdout, stderr
+    def __init__(self):
+        self.llm = LLMWrapper("prompt_scripts.md")
+        self.color = colorama.Fore.GREEN
+        self.ai_color = colorama.Fore.YELLOW
+        self.stream_callback = None
+        self.script_stream_callback = None
+        self.graph = None
+        self.runnable = None
+        # Define your desired output structure
 
-    def command_input(self, state: list):
-        if (verbose): print(self.color + "> command input")
-        command = state["command"]
-        stdout = ""
-        stderr = ""
-        if not command.startswith(self.ai_cmd + " ") and not command == "exit":
-            # execute command on terminal
-            stdout, stderr = self.run_command(command)
-                
-        return {
-            "command": command,
-            "stdout": stdout,
-            "stderr": stderr,
-            "scratchpad": [{
-                "command": command, 
-                "stdout": stdout, 
-                "stderr": stderr
-            }]
-        }
-    
-    def route(self, state: list):
-        if (verbose): print(self.color + "> routing command:", state["command"])
-        """Routes commands to the appropriate agent.
-        * "<ai_cmd> <query>", store <query> in state, return self.ai_cmd
-        * "exit", return "exit"
+    def set_stream_callback(self, callback):
+        self.stream_callback = callback
+
+    def set_script_stream_callback(self, callback):
+        self.script_stream_callback = callback
+
+    def persist_scripts(self, state):
+        for script in state["scripts"].scripts:
+            print(">> creating script: ", script.filename)
+            print(script.content)
+            print("<<")
+            if self.script_stream_callback:
+                self.script_stream_callback(script.filename, script.content)
+            with open("/tmp/" + script.filename, "w") as f:
+                f.write(script.content)
+
+        return state
+
+    def create_scripts(self, state):
+        """get the command, send to ai to generate a script
+        the script is a list of tuples (filename, content)
+        return the state with the scripts 
         """
-        if state["command"] == "exit":
-            return "exit"
-        elif state["command"].startswith(self.ai_cmd + " "):
-            return self.ai_cmd
-        else:
-            if state["stderr"] == "":
-                return "exit"
-            else:
-                return "review_output"
+        scripts = self.llm.run_structured(Scripts, {"request": state["request"]})
+        if (verbose): print(scripts)
+        return {
+            "scripts": scripts,
+            "scratchpad": [{"create_scripts": scripts}]
+        }
 
-class TerminalAgent:
-    def __init__(self, ai_cmd="askai"):
-        self.ai_cmd = ai_cmd
-        self.input_command_router = InputCommandRouter(self.ai_cmd)
-        self.output_reviewer = OutputAnalysisAgent()
-        self.suggestion_agent = SuggestionAgent(self.ai_cmd)
-        self.graph = self.create_graph()
-        self.runnable = self.graph.compile()
+    def create_runnable(self):
+        graph = StateGraph(self.AgentState)
+        graph.add_node("script_agent", self.create_scripts)
+        graph.add_node("save_scripts", self.persist_scripts)
+        graph.add_edge(START, "script_agent")
+        graph.add_edge("script_agent", "save_scripts")
+        graph.add_edge("save_scripts", END)
+        self.graph = graph
+        self.runnable = graph.compile()
 
-    def set_ai_stream_callback(self, callback):
-        self.suggestion_agent.set_stream_callback(callback)
-        self.output_reviewer.set_stream_callback(callback)
+    def run(self, request):
+        if self.runnable is None:
+            self.create_runnable()
+        return self.runnable.invoke({"request" : request})
 
-    def set_strout_stream_callback(self, callback):
-        self.input_command_router.set_stream_callback_stdout(callback)
-
-    def set_stderr_stream_callback(self, callback):
-        self.input_command_router.set_stream_callback_stderr(callback)
-
-    def set_command_stream_callback(self, callback):
-        self.suggestion_agent.set_command_stream_callback(callback)
-        self.output_reviewer.set_command_stream_callback(callback)
-
-    def create_graph(self):
-        graph = StateGraph(AgentState)
-        graph.add_node("command_input", self.input_command_router.command_input)
-        graph.add_node("output_reviewer", self.output_reviewer.analyze)
-        graph.add_node("suggestion_agent", self.suggestion_agent.make_suggestion)
-
-        # graph.set_entry_point("command")
-        graph.add_edge(START, "command_input")
-        graph.add_edge("output_reviewer", END)
-        graph.add_edge("suggestion_agent", END)
-
-        # conditional edges for input_command_router
-        graph.add_conditional_edges(
-            "command_input", 
-            self.input_command_router.route, 
-            {
-                self.ai_cmd: "suggestion_agent",
-                "review_output": "output_reviewer",
-                "unknown_command": END,
-                "exit": END
-            }
-        )
-        return graph
-
-    def run(self, command):
-        if (verbose): print("> running command: ", command)
-        return self.runnable.invoke(command)
-
-
-if __name__ == "__main__":
-    agent = TerminalAgent("askai")
-    
-    ai_output = ""
-    def ai_stream_callback(x):
-        global ai_output
-        if "\n" in x or len(ai_output) > 100:
-            ai_output += x
-            print(colorama.Fore.MAGENTA, ai_output.strip())
-            ai_output = ""
-        else:
-            ai_output += x
-
-    agent.set_ai_stream_callback(ai_stream_callback)
-    agent.set_strout_stream_callback(lambda x: print(colorama.Fore.YELLOW + "stdout: ", x.strip()))
-    agent.set_stderr_stream_callback(lambda x: print(colorama.Fore.RED + "stderr: ", x.strip()))
-    agent.set_command_stream_callback(lambda x: print(colorama.Fore.GREEN + "command: ", x.strip()))
-    command = ""
-    # verbose = True
-    print("Welcome to the AI Terminal")
-    # read command from stdin, until user types "exit"
-    while command != "exit":
-        command = input(colorama.Fore.RESET + "Command: ")
-        out = agent.run({"command": command})
-        print(colorama.Fore.CYAN, out, colorama.Fore.RESET)
-
+    def get_state(self):
+        return self.runnable.get_state()

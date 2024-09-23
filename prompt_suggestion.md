@@ -8,17 +8,4 @@ The command should be a valid bash command, and the reasoning should be a short 
 for the command.
 Feel free to make multiple suggestions of commands.
 
-### RESPONSE FORMAT
-
-<reasoning>The step by step reasoning for the response goes here.</reasoning>
-<command>The command that accomplishes the request, if applicable.</command>
-
-### EXAMPLE
-
-<request>How to sort a file by the second column?</request>
-<reasoning>I need to sort the file by the second column to see the files in a different way.</reasoning>
-<command>sort -k 2 file.txt</command>
-
-### END OF EXAMPLE
-
-<request>{request}</request>
+Request: {request}
