@@ -4,7 +4,7 @@ import colorama
 
 from ai_term.ai.llm_wrapper import LLMWrapper
 from ai_term.ai.agents.persist_predictions import CommandPredictions
-
+from ai_term.symbols import replace_symbols
 verbose = False
 
 class AgentState(TypedDict):
@@ -14,7 +14,7 @@ class AgentState(TypedDict):
 class SuggestionAgent:
 
     def __init__(self):
-        self.llm = LLMWrapper("prompts/prompt_suggestion.md")
+        self.llm = LLMWrapper("suggestion")
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
@@ -33,7 +33,11 @@ class SuggestionAgent:
         request = state["request"]  
         if (verbose): print(self.color + "> requesting ai help: ", request)
         # Generate suggestions based on context
-        predictions = self.llm.run_structured(CommandPredictions, {"request": request})
+        if LLMWrapper.USE_INSTRUCTOR:
+            predictions = self.make_suggestions_instr(state["request"])
+        else:
+            predictions = self.make_suggestions_raw(state["request"])
+        
         for cmd in predictions.commands:
             if self.command_stream_callback:
                 self.command_stream_callback(cmd.command)
@@ -41,6 +45,20 @@ class SuggestionAgent:
         return {
             "predictions": predictions,
         }
+
+    def make_suggestions_raw(self, request):
+        raw_output = ""
+        request = replace_symbols(str(request))
+        print(request)
+        for line in self.llm.stream({"request": request}):
+            if self.stream_callback:
+                self.stream_callback(line)
+            raw_output += line
+        predictions = CommandPredictions.parse(raw_output)
+        return predictions
+
+    def make_suggestions_instr(self, request):
+        return self.llm.run_structured(CommandPredictions, {"request": request})
     
     def create_runnable(self):
         graph = StateGraph(AgentState)

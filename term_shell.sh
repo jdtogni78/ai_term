@@ -2,7 +2,7 @@
 
 # Set up prompt to include exit status
 # The unicode symbol allow us to segregate prompt and commands from regular stderr
-export PS1='⚘ \[\033[01;32m\]\u@\h\[\033[00m\] - \[\033[01;34m\]\w\[\033[00m\]\n⚡'
+export PS1='👤 \[\033[01;32m\]\u@\h\[\033[00m\] - \[\033[01;34m\]\w\[\033[00m\]\n⚡'
 export BASH_SILENCE_DEPRECATION_WARNING=1
 # capture the directory of the script
 AITERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

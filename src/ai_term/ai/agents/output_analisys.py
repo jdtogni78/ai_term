@@ -4,7 +4,7 @@ import colorama
 
 from ai_term.ai.llm_wrapper import LLMWrapper
 from ai_term.ai.agents.persist_predictions import CommandPredictions
-
+from ai_term.symbols import replace_symbols
 verbose = False
 
 class AgentState(TypedDict):
@@ -14,7 +14,7 @@ class AgentState(TypedDict):
 class OutputAnalysisAgent():
 
     def __init__(self):
-        self.llm = LLMWrapper("prompts/prompt_output_review.md")
+        self.llm = LLMWrapper("output_review")
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
@@ -31,7 +31,10 @@ class OutputAnalysisAgent():
     def analyze(self, state):
         if (verbose): print(self.color + "> analyzing stdout and stderr")
         history = state["terminal_history"]
-        predictions = self.llm.run_structured(CommandPredictions, {"terminal_history": history})
+        if (LLMWrapper.USE_INSTRUCTOR):
+            predictions = self.analyze_instr(history)
+        else:
+            predictions = self.analyze_raw(history)
         
         for cmd in predictions.commands:
             if self.command_stream_callback:
@@ -41,6 +44,19 @@ class OutputAnalysisAgent():
         return {
             "predictions": predictions,
         }
+
+    def analyze_raw(self, history):
+        raw_output = ""
+        history = replace_symbols(str(history))
+        for line in self.llm.stream({"terminal_history": history}):
+            if self.stream_callback:
+                self.stream_callback(line)
+            raw_output += line
+        predictions = CommandPredictions.parse(raw_output)
+        return predictions
+
+    def analyze_instr(self, history):
+        predictions = self.llm.run_structured(CommandPredictions, {"terminal_history": history})
     
     def create_runnable(self):
         graph = StateGraph(AgentState)

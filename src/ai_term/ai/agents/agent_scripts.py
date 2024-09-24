@@ -19,14 +19,12 @@ class Script(BaseModel):
 class Scripts(BaseModel):
     scripts: List[Script]
 
+class AgentState(TypedDict):
+    request: str
+    # list of tuples (filename, content)
+    scripts: Scripts
+
 class ScriptAgent:
-    class AgentState(TypedDict):
-        request: str
-        # list of tuples (filename, content)
-        scripts: Scripts
-        output_review: str
-        agent_out: Union[AgentAction, AgentFinish, None]
-        scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
 
     def __init__(self):
         self.llm = LLMWrapper("prompts/prompt_scripts.md")
@@ -69,7 +67,7 @@ class ScriptAgent:
         }
 
     def create_runnable(self):
-        graph = StateGraph(self.AgentState)
+        graph = StateGraph(AgentState)
         graph.add_node("script_agent", self.create_scripts)
         graph.add_node("save_scripts", self.persist_scripts)
         graph.add_edge(START, "script_agent")

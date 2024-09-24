@@ -1,20 +1,23 @@
 import colorama
 from langgraph.graph import END, START, StateGraph
-from typing import List, TypedDict
+from typing import List, TypedDict, Optional
 from dotenv import load_dotenv
 
-from pydantic import BaseModel
-from ..llm_wrapper import LLMWrapper
+from pydantic import BaseModel, Field
+from ai_term.ai.llm_wrapper import LLMWrapper
+from ai_term.symbols import replace_symbols
 
 load_dotenv()
 
 verbose = False
 
 class Script(BaseModel):
-    filename: str
-    content: str
+    reasoning: Optional[str] = Field(..., description="The step by step reasoning for this script")
+    filename: str = Field(..., description="The name of the file to create")
+    content: str = Field(..., description="The content of the script")
 
 class Scripts(BaseModel):
+    reasoning: Optional[str] = Field(..., description="The overall reasoning over the request.")
     scripts: List[Script]
 
 class AgentState(TypedDict):
@@ -26,7 +29,7 @@ class AgentState(TypedDict):
 class ScriptAgent:
 
     def __init__(self):
-        self.llm = LLMWrapper("prompts/prompt_scripts.md")
+        self.llm = LLMWrapper("scripts")
         self.color = colorama.Fore.GREEN
         self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
@@ -58,11 +61,28 @@ class ScriptAgent:
         the script is a list of tuples (filename, content)
         return the state with the scripts 
         """
-        scripts = self.llm.run_structured(Scripts, {"request": state["request"]})
+        request = state["request"]
+        if LLMWrapper.USE_INSTRUCTOR:
+            scripts = self.create_scripts_instr(request)
+        else:
+            scripts = self.create_scripts_raw(request)
         if (verbose): print(scripts)
         return {
             "scripts": scripts,
         }
+
+    def create_scripts_instr(self, request):
+        return self.llm.run_structured(Scripts, {"request": request})
+
+    def create_scripts_raw(self, request):
+        raw_output = ""
+        request = replace_symbols(str(request))
+        for line in self.llm.stream({"request": request}):
+            if self.stream_callback:
+                self.stream_callback(line)
+            raw_output += line
+        scripts = Scripts.parse(raw_output)
+        return scripts
 
     def create_runnable(self):
         graph = StateGraph(AgentState)

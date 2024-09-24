@@ -7,7 +7,7 @@ import colorama
 def main(args):
     # Initialize the SuggestionAgent
     agent = SuggestionAgent()
-    # agent.set_command_stream_callback(lambda x: print(x, end="", flush=True))
+    agent.set_stream_callback(lambda x: print(x, end="", flush=True))
 
     # Get all command-line arguments except the script name
     user_input = " ".join(args)
