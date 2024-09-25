@@ -11,16 +11,18 @@ from openai import OpenAI
 from groq import Groq
 from dotenv import load_dotenv
 from ai_term.symbols import replace_symbols
+from ai_term.config import Colors
 load_dotenv()
 
+from ai_term.config import Config
+
 class LLMWrapper:
-    USE_INSTRUCTOR = False
 
     def __init__(self, prompt_name):
         self.llm_model = self.get_model()
         self.temperature = 0.0
 
-        self.prompt_mode = "instructor" if self.USE_INSTRUCTOR else "raw"
+        self.prompt_mode = "instructor" if Config.USE_INSTRUCTOR else "raw"
         self.prompt_file = self.get_prompt_file(prompt_name)
         self.prompt = PromptTemplate.from_file(self.prompt_file)
         
@@ -54,14 +56,14 @@ class LLMWrapper:
                 OpenAI(base_url="http://localhost:11434/v1", api_key="ollama"),
                 mode=instructor.Mode.JSON,
             )
-            print("Using instructor with ollama, mode JSON")
+            Colors.print("system", "Using instructor with ollama, mode JSON")
         else:
             client = Groq(
                 api_key=os.environ.get("GROQ_API_KEY"),
             )
 
             client = instructor.from_groq(client, mode=instructor.Mode.TOOLS)
-            print("Using instructor with GROQ, mode TOOLS")
+            Colors.print("system", "Using instructor with GROQ, mode TOOLS")
         return client
 
     def stream(self, input):

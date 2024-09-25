@@ -1,0 +1,49 @@
+<summary>
+To accomplish this task, we need to split the large file into smaller parts, sort each part individually, and then merge the sorted parts into a single sorted file. This approach is useful when dealing with large files that cannot fit into memory.
+
+Here's the step-by-step reasoning:
+
+1. Split the large file into smaller parts using the `split` command.
+2. Sort each part individually using the `sort` command.
+3. Merge the sorted parts into a single sorted file using the `sort -m` command.
+
+</summary>
+<command>split, sort, sort -m</command>
+<filename>split_sort_merge.sh</filename>
+<content>#! /bin/bash
+
+# Set the number of lines per split file
+LINES_PER_FILE=1000
+
+# Split the large file into smaller parts
+split -l $LINES_PER_FILE large_file.txt part_
+
+# Sort each part individually
+for file in part_*; do
+  sort $file > sorted_$file
+done
+
+# Merge the sorted parts into a single sorted file
+sort -m sorted_part_* > sorted_large_file.txt
+
+# Remove temporary files
+rm part_* sorted_part_*
+</content>
+
+### Alternative Solution
+
+If you want to avoid creating temporary files, you can use the following script:
+
+<filename>split_sort_merge_pipe.sh</filename>
+<content>#! /bin/bash
+
+# Set the number of lines per split file
+LINES_PER_FILE=1000
+
+# Split the large file into smaller parts, sort each part, and merge the sorted parts
+split -l $LINES_PER_FILE large_file.txt part_ | while read file; do
+  sort $file
+done | sort -m > sorted_large_file.txt
+</content>
+
+Note: This alternative solution uses a pipe to avoid creating temporary files, but it may not be suitable for very large files due to the limitations of the pipe buffer size.

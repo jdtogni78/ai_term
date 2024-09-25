@@ -1,10 +1,11 @@
 from typing import TypedDict
 from langgraph.graph import START, END, StateGraph
-import colorama
 
 from ai_term.ai.llm_wrapper import LLMWrapper
 from ai_term.ai.agents.persist_predictions import CommandPredictions
+from ai_term.config import Config, Colors
 from ai_term.symbols import replace_symbols
+
 verbose = False
 
 class AgentState(TypedDict):
@@ -15,8 +16,6 @@ class OutputAnalysisAgent():
 
     def __init__(self):
         self.llm = LLMWrapper("output_review")
-        self.color = colorama.Fore.GREEN
-        self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
         self.command_stream_callback = None
         self.graph = None
@@ -29,9 +28,9 @@ class OutputAnalysisAgent():
         self.command_stream_callback = callback
 
     def analyze(self, state):
-        if (verbose): print(self.color + "> analyzing stdout and stderr")
+        if (verbose): Colors.print("system", "> analyzing stdout and stderr")
         history = state["terminal_history"]
-        if (LLMWrapper.USE_INSTRUCTOR):
+        if (Config.USE_INSTRUCTOR):
             predictions = self.analyze_instr(history)
         else:
             predictions = self.analyze_raw(history)
@@ -40,7 +39,7 @@ class OutputAnalysisAgent():
             if self.command_stream_callback:
                 self.command_stream_callback(cmd)
 
-        if (verbose): print(self.ai_color + "review: ", predictions)
+        if (verbose): Colors.print("ai_output", "review: ", predictions)
         return {
             "predictions": predictions,
         }

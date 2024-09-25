@@ -1,14 +1,11 @@
-import colorama
 from langgraph.graph import END, START, StateGraph
 from typing import List, TypedDict, Optional
-from dotenv import load_dotenv
 
 from pydantic import BaseModel, Field
 from ai_term.ai.llm_wrapper import LLMWrapper
 from ai_term.symbols import replace_symbols
-
-load_dotenv()
-
+from ai_term.config import Config, Colors
+from ai_term.utils.xml_utils import extract_all_xml
 verbose = False
 
 class Script(BaseModel):
@@ -17,7 +14,7 @@ class Script(BaseModel):
     content: str = Field(..., description="The content of the script")
 
 class Scripts(BaseModel):
-    reasoning: Optional[str] = Field(..., description="The overall reasoning over the request.")
+    summary: Optional[str] = Field(..., description="The overall summary/reasoning over the request.")
     scripts: List[Script]
 
 class AgentState(TypedDict):
@@ -30,8 +27,6 @@ class ScriptAgent:
 
     def __init__(self):
         self.llm = LLMWrapper("scripts")
-        self.color = colorama.Fore.GREEN
-        self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
         self.script_stream_callback = None
         self.graph = None
@@ -46,9 +41,10 @@ class ScriptAgent:
 
     def persist_scripts(self, state):
         for script in state["scripts"].scripts:
-            print(">> creating script: ", script.filename)
-            print(script.content)
-            print("<<")
+            Colors.print("system", "* creating script: ", script.filename)
+            if (verbose):
+                Colors.print("system", script.content)
+                Colors.print("system", "<<")
             if self.script_stream_callback:
                 self.script_stream_callback(script.filename, script.content)
             with open("/tmp/" + script.filename, "w") as f:
@@ -62,11 +58,12 @@ class ScriptAgent:
         return the state with the scripts 
         """
         request = state["request"]
-        if LLMWrapper.USE_INSTRUCTOR:
+        if Config.USE_INSTRUCTOR:
             scripts = self.create_scripts_instr(request)
         else:
             scripts = self.create_scripts_raw(request)
         if (verbose): print(scripts)
+        print("\n")
         return {
             "scripts": scripts,
         }
@@ -81,8 +78,22 @@ class ScriptAgent:
             if self.stream_callback:
                 self.stream_callback(line)
             raw_output += line
-        scripts = Scripts.parse(raw_output)
-        return scripts
+        return self.parse_scripts(raw_output)
+
+    def parse_scripts(self, raw_output):
+        filenames = extract_all_xml("filename", raw_output)
+        contents = extract_all_xml("content", raw_output)
+        reasonings = extract_all_xml("reasoning", raw_output)
+        summary = extract_all_xml("summary", raw_output)
+        scrs = []
+        for i, (filename, content) in enumerate(zip(filenames, contents)):
+            if (i >= len(reasonings)):
+                reason = "-"
+            else:
+                reason = reasonings[i]
+            script = Script(filename=filename, content=content, reasoning=reason)
+            scrs.append(script)
+        return Scripts(summary="".join(summary), scripts=scrs)
 
     def create_runnable(self):
         graph = StateGraph(AgentState)
@@ -101,3 +112,14 @@ class ScriptAgent:
 
     def get_state(self):
         return self.runnable.get_state()
+
+if __name__ == "__main__":
+    agent = ScriptAgent()
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python scripts.py <file>")
+        sys.exit(1)
+    file = sys.argv[1]
+    with open(file, "r") as f:
+        content = f.read()
+    print(agent.parse_scripts(content))

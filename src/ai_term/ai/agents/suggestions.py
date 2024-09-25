@@ -1,10 +1,11 @@
 from typing import TypedDict
 from langgraph.graph import START, END, StateGraph
-import colorama
 
 from ai_term.ai.llm_wrapper import LLMWrapper
 from ai_term.ai.agents.persist_predictions import CommandPredictions
 from ai_term.symbols import replace_symbols
+from ai_term.config import Config
+
 verbose = False
 
 class AgentState(TypedDict):
@@ -15,8 +16,6 @@ class SuggestionAgent:
 
     def __init__(self):
         self.llm = LLMWrapper("suggestion")
-        self.color = colorama.Fore.GREEN
-        self.ai_color = colorama.Fore.YELLOW
         self.stream_callback = None
         self.command_stream_callback = None
         self.graph = None
@@ -33,7 +32,7 @@ class SuggestionAgent:
         request = state["request"]  
         if (verbose): print(self.color + "> requesting ai help: ", request)
         # Generate suggestions based on context
-        if LLMWrapper.USE_INSTRUCTOR:
+        if Config.USE_INSTRUCTOR:
             predictions = self.make_suggestions_instr(state["request"])
         else:
             predictions = self.make_suggestions_raw(state["request"])
@@ -49,7 +48,7 @@ class SuggestionAgent:
     def make_suggestions_raw(self, request):
         raw_output = ""
         request = replace_symbols(str(request))
-        print(request)
+        if (verbose): print(request)
         for line in self.llm.stream({"request": request}):
             if self.stream_callback:
                 self.stream_callback(line)
