@@ -1,12 +1,12 @@
 # next steps
 - [ ] improve install instructions 
 - [ ] make it easier to install
-- [ ] review why 'pwd' doesnt prompt new lines
-- [ ] when pressing up, commands show with a missing character
 - [ ] add test infrastructure
 - [ ] move aicmd to python
 
 # done
+- [x] review why 'pwd' doesnt prompt new lines
+- [x] when pressing up, commands show with a missing character
 - [x] stop llm after X tokens
 - [x] add color to term help
 - [x] use better colors
