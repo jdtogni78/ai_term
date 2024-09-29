@@ -16,6 +16,14 @@ It integrates with the terminal in a seamless way, adding AI capabilities to the
 
 ## Examples
 
+### aiask
+![aiask](https://github.com/user-attachments/assets/2db4f234-9fea-47cb-8900-a9eaa8143a48)
+
+### aierr
+![aierr](https://github.com/user-attachments/assets/8af2f088-af22-49db-999d-0f1220309539)
+
+### aiscript
+![aiscript](https://github.com/user-attachments/assets/a412e0f7-f616-4be7-95e8-3daae910095b)
 
 
 ## LLM Setup
