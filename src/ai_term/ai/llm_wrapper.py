@@ -36,17 +36,19 @@ class LLMWrapper:
 
     def create_llm(self):
         if os.getenv("GROQ_API_KEY") is None:
+            kwargs = ({'num_predict': Config.MAX_TOKENS} if Config.MAX_TOKENS is not None else {})
             return ChatOllama(
                 model=self.get_model(),
                 temperature=self.temperature,
-                num_predict=Config.MAX_TOKENS,  # Limit output tokens
+                **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
         else:
+            kwargs = ({'max_tokens': Config.MAX_TOKENS} if Config.MAX_TOKENS is not None else {})
             return ChatGroq(    
                 model=self.get_model(),
                 api_key=os.getenv("GROQ_API_KEY"),
                 temperature=self.temperature,
-                max_tokens=Config.MAX_TOKENS,  # Limit output tokens
+                **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
         
     def get_model(self):
@@ -58,17 +60,18 @@ class LLMWrapper:
     # Using instuctor output are parsed and formatted using pydantic
     # But, we lose the streaming feature
     def create_instructor(self):
+        kwargs = ({'max_tokens': Config.MAX_TOKENS} if Config.MAX_TOKENS is not None else {})
         if os.getenv("GROQ_API_KEY") is None:
             client = instructor.from_openai(
                 OpenAI(base_url="http://localhost:11434/v1", api_key="ollama"),
                 mode=instructor.Mode.JSON,
-                max_tokens=Config.MAX_TOKENS,
+                **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
             Colors.print("system", "Using instructor with ollama, mode JSON")
         else:
             client = Groq(
                 api_key=os.environ.get("GROQ_API_KEY"),
-                max_tokens=Config.MAX_TOKENS,
+                **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
 
             client = instructor.from_groq(client, mode=instructor.Mode.TOOLS)

@@ -1,3 +1,3 @@
 #!/bin/bash
-
-bash --rcfile term_shell.sh
+AITERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+bash --rcfile $AITERM_DIR/src/shell/term_shell.sh

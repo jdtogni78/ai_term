@@ -1,5 +1,7 @@
 # Ai Terminal
 
+*** *DISCLAIMER: This project is in early stages, features were tested with basic use cases, in a single environment as of now.* ***
+
 Ai Terminal enables direct interaction with LLMs from the terminal.
 
 It integrates with the terminal in a seamless way, adding AI capabilities to the terminal:
@@ -16,6 +18,8 @@ It integrates with the terminal in a seamless way, adding AI capabilities to the
 
 ## Examples
 
+The following examples were generated using **llama3.1-8b-versatile** model via **Groq**.
+
 ### aiask
 ![aiask](https://github.com/user-attachments/assets/2db4f234-9fea-47cb-8900-a9eaa8143a48)
 
@@ -24,28 +28,40 @@ It integrates with the terminal in a seamless way, adding AI capabilities to the
 
 ### aiscript
 ![aiscript](https://github.com/user-attachments/assets/a412e0f7-f616-4be7-95e8-3daae910095b)
-
+* **DISCLAIMER:** The quality of the results depends heavily on the **prompt** and the **capabilities of the LLM**.
 
 ## LLM Setup
 
 The terminal assumes **Ollama** is running locally, and the model **lama3.1** is available.
-Download and install ollama from https://ollama.com/download.
-Install the lama3.1 model with the command: `ollama pull lama3.1`.
+1) Download and install ollama from https://ollama.com/download.
 
-To use groq for faster responses set the **GROQ_API_KEY** environment variable or in the **.env** file.
+2) Install the lama3.1 model with the command:
+    ```
+    ollama pull lama3.1
+    ollama serve
+    ```
 
-Create a new key at https://console.groq.com/keys.
+3) *Optional*: To use groq for faster responses set the **GROQ_API_KEY** environment variable or in the **.env** file.
+Create a key at https://console.groq.com/keys.
 
-## Run the terminal
+3) Python dependencies:
 
-```
-python3 -m venv .env
-source .env/bin/activate
-pip install -r requirements.txt
-./ai_term.sh
-```
+    ```
+    python3 -m venv .env
+    source .env/bin/activate
+    pip install -r requirements.txt
+    ```
 
-## Ideas
+4) Run the terminal:
+
+    ```
+    source .env/bin/activate
+    ./ai_term.sh
+    ```
+
+## What is next?
+
+There are many ways to extend this project, here are some ideas:
 
 * Review the current state of the art in AI terminals and compare to this project.
     * https://www.warp.dev/

@@ -1,6 +1,7 @@
 # next steps
 - [ ] improve install instructions 
-- [ ] make it easier to install
+- [ ] make it easier to install - maybe a pip package?
+https://betterscientificsoftware.github.io/python-for-hpc/tutorials/python-pypi-packaging/#creating-a-python-package
 - [ ] add test infrastructure
 - [ ] move aicmd to python
 
