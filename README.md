@@ -27,7 +27,8 @@ The following examples were generated using **llama3.1-8b-versatile** model via 
 ![aierr](https://github.com/user-attachments/assets/8af2f088-af22-49db-999d-0f1220309539)
 
 ### aiscript
-![aiscript](https://github.com/user-attachments/assets/a412e0f7-f616-4be7-95e8-3daae910095b)
+![Screenshot 2024-09-29 at 12 18 26 AM](https://github.com/user-attachments/assets/785166c8-5da1-490b-a9d0-2dac2469b785)
+
 * **DISCLAIMER:** The quality of the results depends heavily on the **prompt** and the **capabilities of the LLM**.
 
 ## LLM Setup
