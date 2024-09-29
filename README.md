@@ -12,9 +12,12 @@ It integrates with the terminal in a seamless way, adding AI capabilities to the
 ## Commands
 
 * `aihelp <question/request>` - Shows the available commands
-* `aierr <error_number>` - Request AI for command suggestions based on the last command & stderr
+* `aierr <error_number>` - Request AI for command suggestions for some recent command & errors
+* `ailast` - Request AI for command suggestions based on the last command & errors
 * `askai <question/request>` - Request AI for any kind of assistant, focusing on solutions with python or shell scripting
 * `aiscript <request/question>` - Request AI for creating a script to fulfill a request in python or shell scripting
+* `aiprops` - Show the AI assistant properties
+* `aihelp` - Show the help message
 
 ## Examples
 
