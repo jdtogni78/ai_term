@@ -1,4 +1,6 @@
 # next steps
+- [ ] improve install instructions 
+- [ ] make it easier to install
 - [ ] review why 'pwd' doesnt prompt new lines
 - [ ] when pressing up, commands show with a missing character
 - [ ] add test infrastructure

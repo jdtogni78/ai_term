@@ -39,8 +39,9 @@ Create a new key at https://console.groq.com/keys.
 ## Run the terminal
 
 ```
+python3 -m venv .env
+source .env/bin/activate
 pip install -r requirements.txt
-pip install -e .
 ./ai_term.sh
 ```
 

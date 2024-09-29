@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Set up FIFO for stderr
+STDERR_FIFO="/tmp/stderr_fifo_$$"
+CAT_PID=""
+
 PROMPT_SYMBOL="👤"
 CMD_SYMBOL="⚡"
 CHOICE_SYMBOL="🔘"

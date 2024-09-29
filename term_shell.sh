@@ -8,11 +8,7 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 AITERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 export PYTHONPATH="$AITERM_DIR/src:$PYTHONPATH"
 
-
-# Set up FIFO for stderr
-STDERR_FIFO="/tmp/stderr_fifo_$$"
-CAT_PID=""
-
+source "$AITERM_DIR/.env/bin/activate"
 # Source the AI commands library
 source "$AITERM_DIR/ai_commands.sh"
 
