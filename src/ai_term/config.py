@@ -57,7 +57,7 @@ class _Colors:
 class _Config:
     def __init__(self):
         self.USE_INSTRUCTOR = os.getenv('USE_INSTRUCTOR', False)
-        self.AUTO_SUGGESTIONS = False  # Set this to True to enable automatic suggestions
+        self.AUTO_SUGGESTIONS = os.getenv('AUTO_SUGGESTIONS', False)
         self.MAX_TOKENS = os.getenv('MAX_TOKENS', 2000)
 
 
