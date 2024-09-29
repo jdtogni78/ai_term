@@ -41,7 +41,7 @@ class ScriptAgent:
 
     def persist_scripts(self, state):
         for script in state["scripts"].scripts:
-            Colors.print("system", "* creating script: ", script.filename)
+            Colors.print("system", "* creating script: /tmp/", script.filename)
             if (verbose):
                 Colors.print("system", script.content)
                 Colors.print("system", "<<")

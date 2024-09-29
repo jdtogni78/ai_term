@@ -1,4 +1,5 @@
 # next steps
+- [ ] review management of temp files and scripts: use workdir, cleanup temp files
 - [ ] improve install instructions 
 - [ ] make it easier to install - maybe a pip package?
 https://betterscientificsoftware.github.io/python-for-hpc/tutorials/python-pypi-packaging/#creating-a-python-package
