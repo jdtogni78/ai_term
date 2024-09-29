@@ -11,37 +11,44 @@ from openai import OpenAI
 from groq import Groq
 from dotenv import load_dotenv
 from ai_term.symbols import replace_symbols
-from ai_term.config import Colors
+from ai_term.config import Colors, Config
 load_dotenv()
-
-from ai_term.config import Config
 
 class LLMWrapper:
 
-    def __init__(self, prompt_name):
+    def __init__(self, prompt_name, verbose=False):
         self.llm_model = self.get_model()
         self.temperature = 0.0
 
+        self.llm_descr = "local ollama" if os.getenv("GROQ_API_KEY") is None else "groq"
         self.prompt_mode = "instructor" if Config.USE_INSTRUCTOR else "raw"
+        if (verbose): print("Using", self.llm_descr, 
+                            "model:", self.get_model(), 
+                            "prompt mode:", self.prompt_mode)
+
         self.prompt_file = self.get_prompt_file(prompt_name)
         self.prompt = PromptTemplate.from_file(self.prompt_file)
-        
-        self.chain = self.prompt | self.create_llm() | StrOutputParser()
-        self.client = self.create_instructor()
+        if Config.USE_INSTRUCTOR:
+            self.client = self.create_instructor()
+        else:
+            self.client = self.create_llm()
+        self.chain = self.prompt | self.client | StrOutputParser()
 
     def create_llm(self):
         if os.getenv("GROQ_API_KEY") is None:
             return ChatOllama(
                 model=self.get_model(),
                 temperature=self.temperature,
+                num_predict=Config.MAX_TOKENS,  # Limit output tokens
             )
         else:
             return ChatGroq(    
                 model=self.get_model(),
                 api_key=os.getenv("GROQ_API_KEY"),
                 temperature=self.temperature,
+                max_tokens=Config.MAX_TOKENS,  # Limit output tokens
             )
-
+        
     def get_model(self):
         if os.getenv("GROQ_API_KEY") is None:
             return "llama3.1"
@@ -55,11 +62,13 @@ class LLMWrapper:
             client = instructor.from_openai(
                 OpenAI(base_url="http://localhost:11434/v1", api_key="ollama"),
                 mode=instructor.Mode.JSON,
+                max_tokens=Config.MAX_TOKENS,
             )
             Colors.print("system", "Using instructor with ollama, mode JSON")
         else:
             client = Groq(
                 api_key=os.environ.get("GROQ_API_KEY"),
+                max_tokens=Config.MAX_TOKENS,
             )
 
             client = instructor.from_groq(client, mode=instructor.Mode.TOOLS)

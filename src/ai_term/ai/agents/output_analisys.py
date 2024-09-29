@@ -14,8 +14,8 @@ class AgentState(TypedDict):
 
 class OutputAnalysisAgent():
 
-    def __init__(self):
-        self.llm = LLMWrapper("output_review")
+    def __init__(self, verbose=False):
+        self.llm = LLMWrapper("output_review", verbose=verbose)
         self.stream_callback = None
         self.command_stream_callback = None
         self.graph = None

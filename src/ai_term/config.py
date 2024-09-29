@@ -49,12 +49,17 @@ class _Colors:
     def print(self, color: str, *args):
         if color not in self.colors:
             raise ValueError(f"Invalid color: {color}, expected one of {self.colors.keys()}")
-        print(self.colors[color], *args, self.colors['reset'], flush=True)
-        # print(self.colors['reset'])
+        # add color as first argument
+        print(self.colors[color], end="")
+        print(*args)
+        print(self.colors['reset'], end="", flush=True)
 
 class _Config:
     def __init__(self):
         self.USE_INSTRUCTOR = os.getenv('USE_INSTRUCTOR', False)
+        self.AUTO_SUGGESTIONS = False  # Set this to True to enable automatic suggestions
+        self.MAX_TOKENS = os.getenv('MAX_TOKENS', 2000)
+
 
 Config = _Config()
 Colors = _Colors()

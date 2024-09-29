@@ -17,10 +17,7 @@ def main(args):
         user_input = input("aiask: ")
 
     Colors.set_color("ai_output")
-    # Make a suggestion based on the input
     response = agent.run(user_input)
-
-    # Print the suggestion
     Colors.set_color("reset")
 
 if __name__ == "__main__":

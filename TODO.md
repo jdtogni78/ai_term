@@ -1,6 +1,12 @@
 # next steps
-- [ ] stop llm after X tokens
 - [ ] review why 'pwd' doesnt prompt new lines
+- [ ] when pressing up, commands show with a missing character
+- [ ] add test infrastructure
+- [ ] move aicmd to python
+
+# done
+- [x] stop llm after X tokens
+- [x] add color to term help
 - [x] use better colors
 - [x] move colors and use instructor flag to config file
 - [x] replace uses of colorama with new colors from config

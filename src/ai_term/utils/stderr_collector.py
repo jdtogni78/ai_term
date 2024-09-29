@@ -43,3 +43,10 @@ class StderrCollector:
                 break
         return result
     
+    def show(self):
+        # show a numbered list of errors
+        for i, line in enumerate(self.stderr_lines):
+            print(f"{i}. {line}")
+
+    def get_items(self, indexes: list[int]):
+        return [self.stderr_lines[i] for i in indexes]

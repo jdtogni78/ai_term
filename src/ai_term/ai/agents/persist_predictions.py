@@ -25,7 +25,7 @@ class CommandPredictions(BaseModel):
                 for i, cmd in enumerate(state["predictions"].commands):
                     f.write(cmd.command + "\n")
                     Colors.print("system", SYMBOL_CHOICE, str(i+1), cmd.command)
-            Colors.print("system", "NOTE: run 'aicmd <number>' to execute the command\n")
+            Colors.print("system", "NOTE: run 'aicmd <optional number> <optional y>' to execute the command\n")
         return state
 
     @staticmethod

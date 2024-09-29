@@ -1,18 +1,22 @@
 # Ai Terminal
 
-This is as project to create an AI supported terminal.
+Ai Terminal enables direct interaction with LLMs from the terminal.
 
-It uses langgraph agents to interface with the AI models.
+It integrates with the terminal in a seamless way, adding AI capabilities to the terminal:
+* Requests AI suggestions for command corrections based on the last error automatically collected from stderr
+* Requests AI for command suggestions to fulfill user requests
+* Requests AI creating full scripts to automate complex tasks
 
-The terminal should has an ai side bar, the ai reviews all terminal output and is capable of:
-* suggesting corrections based on the last error
-* making predictions for the next commands
+## Commands
 
-The terminal user can request for ai suggestions with a command "aihelp <question/request>". 
+* `aihelp <question/request>` - Shows the available commands
+* `aierr <error_number>` - Request AI for command suggestions based on the last command & stderr
+* `askai <question/request>` - Request AI for any kind of assistant, focusing on solutions with python or shell scripting
+* `aiscript <request/question>` - Request AI for creating a script to fulfill a request in python or shell scripting
 
-The system runs the terminal commands, capturing the stdout and stderr, and command.
-When an error occurs the AI is called to review the output and make a suggestion for the next command.
-You can also request for AI help with a command "askai <question/request>".
+## Examples
+
+
 
 ## LLM Setup
 
