@@ -41,7 +41,7 @@ Create a new key at https://console.groq.com/keys.
 ```
 pip install -r requirements.txt
 pip install -e .
-./ai_term_pipe.py
+./ai_term.sh
 ```
 
 ## Ideas
