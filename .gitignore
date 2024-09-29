@@ -2,4 +2,6 @@ lg_env/
 __pycache__/
 .env
 github_images/
-DS_Store
+.DS_Store
+groq.env
+ollama.env

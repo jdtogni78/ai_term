@@ -44,19 +44,12 @@ ai_stop_monitor() {
     rm -f "$STDERR_FIFO"
 }
 
-aiask() {
-    python $AITERM_DIR/src/ai_term/shell/aiask.py "$*"
-}
-aiscript() {
-    python $AITERM_DIR/src/ai_term/shell/aiscript.py "$*"
-}
-aierr() {
-    python $AITERM_DIR/src/ai_term/shell/aierr.py "$*"
-}
-ailast() {
-    aierr 1
-}
-
+# Aliases for one-liners
+alias aiask='python $AITERM_DIR/src/ai_term/shell/aiask.py'
+alias aiscript='python $AITERM_DIR/src/ai_term/shell/aiscript.py'
+alias aierr='python $AITERM_DIR/src/ai_term/shell/aierr.py'
+alias ailast='aierr 1'
+alias aiprops='python $AITERM_DIR/src/ai_term/config.py'
 
 aicmd() {
     # if no args, print all commands
@@ -110,14 +103,3 @@ aihelp() {
     echo
 }
 
-aiprops() {
-    echo
-    echo "AI Term properties (.env file)"
-    echo "=============================="
-    echo -e "\033[32mUSE_INSTRUCTOR\033[0m: \033[33mTrue\033[0m to use the Instructor library (experimental)"
-    echo -e "\033[32mGROQ_API_KEY\033[0m: API key for Groq"
-    echo -e "\033[32mHIDE_SLASH_HELP\033[0m: \033[33mTrue\033[0m to hide the help message at startup"
-    echo -e "\033[32mAUTO_SUGGESTIONS\033[0m: \033[33mTrue\033[0m to enable auto suggestions"
-    echo -e "\033[32mMAX_TOKENS\033[0m: Maximum number of tokens to use for the LLM (prevents long responses)"
-    echo
-}

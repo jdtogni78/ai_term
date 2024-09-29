@@ -20,10 +20,11 @@ class SuggestionAgent:
         self.command_stream_callback = None
         self.graph = None
         self.runnable = None
+        self.is_streaming = False
 
     def set_stream_callback(self, callback):
         self.stream_callback = callback
-
+        self.is_streaming = True
     def set_command_stream_callback(self, callback):
         self.command_stream_callback = callback
 
@@ -59,6 +60,11 @@ class SuggestionAgent:
     def make_suggestions_instr(self, request):
         return self.llm.run_structured(CommandPredictions, {"request": request})
     
+    def should_print(self, state):
+        if Config.USE_INSTRUCTOR or not self.is_streaming or Config.PRINT_REASONING:
+            return "print_suggestion"
+        return "persist_predictions"
+    
     def create_runnable(self):
         graph = StateGraph(AgentState)
         graph.add_node("suggestion_agent", self.make_suggestion)
@@ -66,7 +72,7 @@ class SuggestionAgent:
         graph.add_node("persist_predictions", CommandPredictions.persist_predictions)
         
         graph.add_edge(START, "suggestion_agent")
-        graph.add_edge("suggestion_agent", "print_suggestion")
+        graph.add_conditional_edges("suggestion_agent", self.should_print)
         graph.add_edge("print_suggestion", "persist_predictions")
         graph.add_edge("persist_predictions", END)
         

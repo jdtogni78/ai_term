@@ -31,12 +31,12 @@ class CommandPredictions(BaseModel):
     @staticmethod
     def print_predictions(state):
         if "predictions" in state:
-            print("\n\n")
+            print("\n\n***************")
             # Colors.print("system", "Suggestions:")
             # Colors.print("system", "* ",state["predictions"].summary)
             for suggestion in state["predictions"].commands:
-                Colors.print("system", "* Reasoning: ", suggestion.reasoning)
-                Colors.print("system", "* Command: ", suggestion.command)
+                Colors.print("system", "* Reasoning:", suggestion.reasoning)
+                Colors.print("system", "* Command  :", suggestion.command)
                 Colors.print("system", "***************")
         return state
 

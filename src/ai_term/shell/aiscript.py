@@ -3,12 +3,13 @@
 import sys
 import colorama
 from ai_term.ai.agents.scripts import ScriptAgent
-from ai_term.config import Colors
+from ai_term.config import Colors, Config
 
 def main(args):
     # Initialize the SuggestionAgent
     agent = ScriptAgent()
-    agent.set_stream_callback(lambda x: print(x, end="", flush=True))
+    if Config.PRINT_STREAM: 
+        agent.set_stream_callback(lambda x: print(x, end="", flush=True))
     
     # Get all command-line arguments except the script name
     user_input = " ".join(args)

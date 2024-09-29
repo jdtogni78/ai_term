@@ -17,13 +17,13 @@ load_dotenv()
 class LLMWrapper:
 
     def __init__(self, prompt_name, verbose=False):
-        self.llm_model = self.get_model()
+        self.llm_model = Config.MODEL_NAME
         self.temperature = 0.0
 
         self.llm_descr = "local ollama" if os.getenv("GROQ_API_KEY") is None else "groq"
         self.prompt_mode = "instructor" if Config.USE_INSTRUCTOR else "raw"
         if (verbose): print("Using", self.llm_descr, 
-                            "model:", self.get_model(), 
+                            "model:", self.llm_model, 
                             "prompt mode:", self.prompt_mode)
 
         self.prompt_file = self.get_prompt_file(prompt_name)
@@ -38,25 +38,19 @@ class LLMWrapper:
         if os.getenv("GROQ_API_KEY") is None:
             kwargs = ({'num_predict': Config.MAX_TOKENS} if Config.MAX_TOKENS is not None else {})
             return ChatOllama(
-                model=self.get_model(),
+                model=self.llm_model,
                 temperature=self.temperature,
                 **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
         else:
             kwargs = ({'max_tokens': Config.MAX_TOKENS} if Config.MAX_TOKENS is not None else {})
             return ChatGroq(    
-                model=self.get_model(),
+                model=self.llm_model,
                 api_key=os.getenv("GROQ_API_KEY"),
                 temperature=self.temperature,
                 **kwargs,  # Limit output tokens if MAX_TOKENS is set
             )
         
-    def get_model(self):
-        if os.getenv("GROQ_API_KEY") is None:
-            return "llama3.1"
-        else:
-            return "llama-3.1-70b-versatile"
-
     # Using instuctor output are parsed and formatted using pydantic
     # But, we lose the streaming feature
     def create_instructor(self):

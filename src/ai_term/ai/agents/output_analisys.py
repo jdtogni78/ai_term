@@ -20,8 +20,9 @@ class OutputAnalysisAgent():
         self.command_stream_callback = None
         self.graph = None
         self.runnable = None
-
+        self.is_streaming = False
     def set_stream_callback(self, callback):
+        self.is_streaming = True
         self.stream_callback = callback
 
     def set_command_stream_callback(self, callback):
@@ -57,6 +58,11 @@ class OutputAnalysisAgent():
     def analyze_instr(self, history):
         predictions = self.llm.run_structured(CommandPredictions, {"terminal_history": history})
     
+    def should_print(self, state):
+        if Config.USE_INSTRUCTOR or not self.is_streaming or Config.PRINT_REASONING:
+            return "print_output_analysis"
+        return "persist_predictions"
+    
     def create_runnable(self):
         graph = StateGraph(AgentState)
         
@@ -65,7 +71,7 @@ class OutputAnalysisAgent():
         graph.add_node("persist_predictions", CommandPredictions.persist_predictions)
         
         graph.add_edge(START, "output_reviewer")
-        graph.add_edge("output_reviewer", "print_output_analysis")
+        graph.add_conditional_edges("output_reviewer", self.should_print)
         graph.add_edge("print_output_analysis", "persist_predictions")
         graph.add_edge("persist_predictions", END)
         

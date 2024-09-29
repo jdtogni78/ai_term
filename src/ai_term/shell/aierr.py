@@ -3,7 +3,7 @@ import sys
 
 from ai_term.utils.stderr_buffer import StderrBuffer
 from ai_term.ai.agents.output_analisys import OutputAnalysisAgent
-from ai_term.config import Colors
+from ai_term.config import Colors, Config
 
 class AIErr:
     def __init__(self):
@@ -42,7 +42,8 @@ class AIErr:
 
     def call_ai_agent(self, error):
         agent = OutputAnalysisAgent()
-        agent.set_stream_callback(lambda x: print(x, end="", flush=True))
+        if Config.PRINT_STREAM: 
+            agent.set_stream_callback(lambda x: print(x, end="", flush=True))
 
         Colors.set_color("ai_output")
         response = agent.run(error)

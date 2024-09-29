@@ -31,9 +31,10 @@ class ScriptAgent:
         self.script_stream_callback = None
         self.graph = None
         self.runnable = None
-        # Define your desired output structure
+        self.is_streaming = False
 
     def set_stream_callback(self, callback):
+        self.is_streaming = True
         self.stream_callback = callback
 
     def set_script_stream_callback(self, callback):
@@ -42,14 +43,20 @@ class ScriptAgent:
     def persist_scripts(self, state):
         for script in state["scripts"].scripts:
             Colors.print("system", "* creating script: /tmp/" + script.filename)
-            if (verbose):
-                Colors.print("system", script.content)
-                Colors.print("system", "<<")
             if self.script_stream_callback:
                 self.script_stream_callback(script.filename, script.content)
             with open("/tmp/" + script.filename, "w") as f:
                 f.write(script.content)
 
+        return state
+
+    def print_scripts(self, state):
+        if "scripts" in state:
+            Colors.print("system", "\n\nScripts:")
+            for script in state["scripts"].scripts:
+                Colors.print("system", "**** START", script.filename)
+                Colors.print("system", script.content)
+                Colors.print("system", "**** END", script.filename)
         return state
 
     def create_scripts(self, state):
@@ -95,13 +102,23 @@ class ScriptAgent:
             scrs.append(script)
         return Scripts(summary="".join(summary), scripts=scrs)
 
+    def should_print(self, state):
+        if Config.USE_INSTRUCTOR or not self.is_streaming or Config.PRINT_REASONING:
+            return "print_scripts"
+        return "save_scripts"
+
     def create_runnable(self):
         graph = StateGraph(AgentState)
+        
         graph.add_node("script_agent", self.create_scripts)
+        graph.add_node("print_scripts", self.print_scripts)
         graph.add_node("save_scripts", self.persist_scripts)
-        graph.add_edge(START, "script_agent")
-        graph.add_edge("script_agent", "save_scripts")
-        graph.add_edge("save_scripts", END)
+        
+        graph.add_edge(START, "script_agent")   
+        graph.add_conditional_edges("script_agent", self.should_print)
+        graph.add_edge("print_scripts", "save_scripts")
+        graph.add_edge("save_scripts", END) 
+        
         self.graph = graph
         self.runnable = graph.compile()
 

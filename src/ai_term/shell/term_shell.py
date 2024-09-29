@@ -23,9 +23,7 @@ class TermShell:
         self.last_change_time = time.time()
         self.partial_line = ""
         self.agent = OutputAnalysisAgent(verbose=True)
-        self.agent.set_stream_callback(lambda x: print(x, end="", flush=True))
         self.ai_thread = None
-
 
     def force_prompt(self):
         # send a kill signal to the parent process
@@ -49,6 +47,12 @@ class TermShell:
         if (verbose): print("collected")
         Colors.set_color("ai_output")
         print("\n")
+
+        if Config.PRINT_STREAM:
+            self.agent.set_stream_callback(lambda x: print(x, end="", flush=True))
+        else:
+            self.agent.set_stream_callback(None)
+            
         self.agent.run(lines)
         Colors.set_color("reset")
         self.force_prompt()
