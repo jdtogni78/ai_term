@@ -21,11 +21,10 @@ class AIErr:
         groups = groups[1:] # remove 1st group as its aierr command
         return groups
     
-    def select_group(self):
+    def select_group(self, groups):
         """
         Show a numbered list of errors for each line in /tmp/stderr_buffer.json
         """
-        groups = self.prepare_groups()
         for i, group in enumerate(groups, 1):
             print(f"{i})")
             for line in group:
@@ -33,7 +32,7 @@ class AIErr:
 
         # read a number from stdin and show the error
         try:
-            num = int(input("Which error to send? "))
+            num = int(input("Which collection to send? "))
             if num == 0:
                 return None
             return groups[num-1]
@@ -58,7 +57,8 @@ class AIErr:
             groups = self.prepare_groups()
             selected = groups[int(args[0])-1]
         else:
-            selected = self.select_group()
+            groups = self.prepare_groups()
+            selected = self.select_group(groups)
         if selected:
             self.call_ai_agent(selected)
         else:
