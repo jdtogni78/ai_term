@@ -21,13 +21,14 @@ It integrates with the terminal in a seamless way, adding AI capabilities to the
 The following examples were generated using **llama3.1-8b-versatile** model via **Groq**.
 
 ### aiask
-![aiask](https://github.com/user-attachments/assets/2db4f234-9fea-47cb-8900-a9eaa8143a48)
+![aiask example](https://github.com/user-attachments/assets/2db4f234-9fea-47cb-8900-a9eaa8143a48)
 
 ### aierr
-![aierr](https://github.com/user-attachments/assets/8af2f088-af22-49db-999d-0f1220309539)
+![aierr example](https://github.com/user-attachments/assets/8af2f088-af22-49db-999d-0f1220309539)
 
 ### aiscript
-![Screenshot 2024-09-29 at 12 18 26 AM](https://github.com/user-attachments/assets/785166c8-5da1-490b-a9d0-2dac2469b785)
+![aiscript example](https://github.com/user-attachments/assets/93bc17c0-9692-4738-a34a-008684c76615)
+
 
 * **DISCLAIMER:** The quality of the results depends heavily on the **prompt** and the **capabilities of the LLM**.
 
