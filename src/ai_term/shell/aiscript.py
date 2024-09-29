@@ -3,6 +3,7 @@
 import sys
 import colorama
 from ai_term.ai.agents.scripts import ScriptAgent
+from ai_term.config import Colors
 
 def main(args):
     # Initialize the SuggestionAgent
@@ -18,12 +19,9 @@ def main(args):
     if not user_input:
         user_input = input("askai: ")
 
-    print(colorama.Fore.MAGENTA, end="", flush=True)
-    # Make a suggestion based on the input
+    Colors.set_color("ai_output")
     response = agent.run(user_input)
-    
-    # Print the suggestion
-    print(colorama.Fore.RESET, end="", flush=True)
+    Colors.set_color("reset")
 
 if __name__ == "__main__":
     main(sys.argv[1:])

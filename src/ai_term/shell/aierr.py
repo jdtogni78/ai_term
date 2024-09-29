@@ -49,13 +49,13 @@ class AIErr:
         Colors.set_color("reset")
 
     def main(self, args):
-        if len(args) > 2:
+        if len(args) > 1:
             print("Usage: aierr <error_number>")
             return
         selected = None
-        if len(args) == 2 and args[1].isdigit():
+        if len(args) == 1 and args[0].isdigit():
             groups = self.prepare_groups()
-            selected = groups[int(args[1])-1]
+            selected = groups[int(args[0])-1]
         else:
             selected = self.select_group()
         if selected:
@@ -64,4 +64,4 @@ class AIErr:
             print("No error selected")
 
 if __name__ == "__main__":
-    AIErr().main(sys.argv)
+    AIErr().main(sys.argv[1:])
