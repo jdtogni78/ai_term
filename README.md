@@ -64,6 +64,14 @@ Create a key at https://console.groq.com/keys.
     ./ai_term.sh
     ```
 
+## References
+
+Related projects:
+* https://github.com/Thakay/aiterm
+* https://www.aiterm.net/
+* https://www.warp.dev/
+* https://github.com/nvbn/thefuck
+
 ## What is next?
 
 There are many ways to extend this project, here are some ideas:
